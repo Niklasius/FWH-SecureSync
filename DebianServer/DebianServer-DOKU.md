@@ -1,3 +1,3 @@
 # DebianServer-DOKU
 
-## 2026.02.10 - create debian server
+## 10.02.2026 - create debian server
