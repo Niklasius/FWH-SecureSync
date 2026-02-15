@@ -6,3 +6,5 @@ It monitors a directory in real-time and automatically detectes file changes:
 - File created
 - File modified/saved
 - File deleted
+
+## 15.02.2026 - add config file
