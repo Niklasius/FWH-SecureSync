@@ -1,12 +1,16 @@
+#   ---   watchdog test code   ---   #
+
+
 import time
 import json
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# config file path and name
 CONFIG_FILE = Path(__file__).parent / "config-test_watchdog.json"
 
-
+# load config file
 def load_config():
     if not CONFIG_FILE.exists():
         print(f"Config-Datei nicht gefunden: {CONFIG_FILE}")
@@ -14,7 +18,7 @@ def load_config():
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
+# watchdog event handler
 class MeinHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not event.is_directory:
@@ -33,21 +37,23 @@ class MeinHandler(FileSystemEventHandler):
             print(f"Datei verschoben: {event.src_path} -> {event.dest_path}")
 
 
+#   main code   #
 if __name__ == "__main__":
-    config = load_config()
-    watch_path = config["watch_path"]
-    recursive = config.get("recursive", False)
+    config = load_config()                          # import config file into config
+    watch_path = config["watch_path"]               # load watch path from config
+    watch_subfolder = config["recursive"]           # load recursive setting from config  
 
-    print(f"Überwache: {watch_path}  (recursive={recursive})")
+    print(f"Überwache: {watch_path}  (recursive={watch_subfolder})")
 
     event_handler = MeinHandler()
     observer = Observer()
-    observer.schedule(event_handler, path=watch_path, recursive=recursive)
-    observer.start()
+    observer.schedule(event_handler, path=watch_path, recursive=watch_subfolder)    # watchdog config
+    observer.start()                                                                # start watchdog
 
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        observer.stop()
+
+        observer.stop()     # stop watchdog
     observer.join()
