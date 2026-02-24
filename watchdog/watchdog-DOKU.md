@@ -8,3 +8,5 @@ It monitors a directory in real-time and automatically detectes file changes:
 - File deleted
 
 ## 15.02.2026 - add config file
+
+## 24.02.2026 - add description
