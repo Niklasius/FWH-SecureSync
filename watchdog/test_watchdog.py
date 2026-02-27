@@ -20,20 +20,29 @@ def load_config():
 
 # watchdog event handler
 class MeinHandler(FileSystemEventHandler):
+    def __init__(self, extensions):
+        self.extensions = [ext.lower() for ext in extensions]  # z.B. [".txt", ".pdf"]
+
+    def _erlaubt(self, path):
+        # leere Liste = alle Dateitypen erlaubt
+        if not self.extensions:
+            return True
+        return Path(path).suffix.lower() in self.extensions
+
     def on_modified(self, event):
-        if not event.is_directory:
+        if not event.is_directory and self._erlaubt(event.src_path):
             print(f"Datei geändert: {event.src_path}")
 
     def on_created(self, event):
-        if not event.is_directory:
+        if not event.is_directory and self._erlaubt(event.src_path):
             print(f"Datei erstellt: {event.src_path}")
 
     def on_deleted(self, event):
-        if not event.is_directory:
+        if not event.is_directory and self._erlaubt(event.src_path):
             print(f"Datei gelöscht: {event.src_path}")
 
     def on_moved(self, event):
-        if not event.is_directory:
+        if not event.is_directory and self._erlaubt(event.src_path):
             print(f"Datei verschoben: {event.src_path} -> {event.dest_path}")
 
 
@@ -41,11 +50,15 @@ class MeinHandler(FileSystemEventHandler):
 if __name__ == "__main__":
     config = load_config()                          # import config file into config
     watch_path = config["watch_path"]               # load watch path from config
-    watch_subfolder = config["recursive"]           # load recursive setting from config  
+    watch_subfolder = config["recursive"]           # load recursive setting from config
+    extensions = config.get("extensions", [])       # load file extensions from config (empty = all)
 
-    print(f"Überwache: {watch_path}  (recursive={watch_subfolder})")
+    if extensions:
+        print(f"Überwache: {watch_path}  (recursive={watch_subfolder})  (Dateitypen: {', '.join(extensions)})")
+    else:
+        print(f"Überwache: {watch_path}  (recursive={watch_subfolder})  (Dateitypen: alle)")
 
-    event_handler = MeinHandler()
+    event_handler = MeinHandler(extensions=extensions)
     observer = Observer()
     observer.schedule(event_handler, path=watch_path, recursive=watch_subfolder)    # watchdog config
     observer.start()                                                                # start watchdog
