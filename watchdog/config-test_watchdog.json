@@ -1,4 +1,5 @@
 {
-"watch_path": "add Path",
-    "recursive": true
+    "watch_path": "add Path",
+    "recursive": true,
+    "extensions": ["add type", "add type"]
 }
