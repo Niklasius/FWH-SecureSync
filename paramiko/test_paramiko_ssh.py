@@ -1,31 +1,38 @@
 import paramiko
-import sys       # Ermöglicht sauberes Beenden des Programms bei Fehlern
+import os
+import sys       # Allows a clean exit of the program in case of errors
 
-#  Authentifizierung für den Debian-Server
-SSH_HOST = "192.168.2.124"  # Die IP-Adresse der Debian-VM
-SSH_USER = "securesync" # Der User, den wir bei der Installation erstellt haben
-SSH_PASS = ""    # Das zugehörige Passwort
+# Authentication for the Debian server
+SSH_HOST = "192.168.2.124"  # The IP address of the Debian VM
+SSH_USER = "securesync"     # The user created during installation
+SSH_PASS = "Pa$$w0rd"       # The corresponding password
 
 def connect_to_server():
-    # Diese Funktion baut eine verschlüsselte Verbindung zum Server auf,
-    # führt einen Testbefehl aus und schließt die Verbindung wieder.
+    # This function establishes an encrypted connection to the server,
+    # checks a local folder, and uploads any existing files.
     
-    # 1. SSH-Client Objekt erstellen:
-    # quasi das 'Telefon', mit dem wir den Server anrufen.
+    # --- PATH CONFIGURATION ---
+    # expanduser converts '~' into the full path (e.g., /Users/username/...)
+    local_dir = os.path.expanduser("~/projects/FWH-SecureSync/paramiko/transfer_test")
+    remote_dir = f"/home/{SSH_USER}/uploads"
+
+    # 1. Create SSH client object:
+    # Think of it as the 'telephone' used to call the server.
     client = paramiko.SSHClient()
     
-    # 2. Sicherheits-Policy setzen:
-    # Da unser Client den Debian-Server noch nicht "kennt", würde SSH normalerweise fragen:
-    # 'Vertraust du diesem Server ?' (Key-Verifikation).
-    # AutoAddPolicy() sagt: 'Ja, füge den Server-Schlüssel automatisch hinzu.'
+    # 2. Set security policy:
+    # AutoAddPolicy() says: 'Yes, automatically add the server key.'
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
-        print(f"--- Starte Verbindungsaufbau zu {SSH_HOST} ---")
+        # VERIFICATION: Does the local folder exist at all?
+        if not os.path.exists(local_dir):
+            print(f"❌ Error: Local folder {local_dir} does not exist.")
+            return False
+
+        print(f"--- Starting connection setup to {SSH_HOST} ---")
         
-        # 3.(Login):
-        # Wir übergeben IP, User und das Passwort. 
-        # timeout=10 verhindert, dass das Skript ewig hängt, wenn der Server offline ist.
+        # 3. (Login):
         client.connect(
             hostname=SSH_HOST, 
             username=SSH_USER, 
@@ -33,35 +40,49 @@ def connect_to_server():
             timeout=10
         )
         
-        print("✅ Authentifizierung erfolgreich: Die Tür ist offen.")
+        print("✅ Authentication successful: The door is open.")
 
-        # 4. Einen Befehl auf dem fernen System ausführen:
-        # exec_command sendet den String direkt an die Debian-Bash.
-        # Wir erhalten drei 'Kanäle': 
-        # stdin (Eingabe), stdout (Standard-Ausgabe), stderr (Fehlermeldungen).
+        # 4. Execute a command on the remote system:
+        # exec_command sends the string directly to the Debian bash.
         stdin, stdout, stderr = client.exec_command('uptime')
-        
-        # Die Antwort vom Server muss von 'Bytes' in 'Text' (UTF-8) umgewandelt werden.
         output = stdout.read().decode('utf-8').strip()
-        print(f"🐧 Nachricht vom Debian-Server: {output}")
+        print(f"🐧 Message from Debian server: {output}")
 
+        # --- 5. SFTP Subsystem for file transfer ---
+        print(f"📁 Searching for files in {local_dir}...")
+        sftp = client.open_sftp()
+
+        # Listing all files in the local directory
+        files = [f for f in os.listdir(local_dir) if os.path.isfile(os.path.join(local_dir, f))]
+
+        if not files:
+            print("ℹ️ No files found in local folder for upload.")
+        else:
+            for file_name in files:
+                local_path = os.path.join(local_dir, file_name)
+                remote_path = f"{remote_dir}/{file_name}"
+                
+                print(f"🚀 Transferring: {file_name} ...")
+                sftp.put(local_path, remote_path)
+                print(f"✅ {file_name} successfully uploaded to {remote_dir}.")
+
+        sftp.close()
         return True
 
     except paramiko.AuthenticationException:
-        # Tritt auf, wenn User oder Passwort nicht stimmen.
-        print("❌ Login-Fehler: Überprüfe User und Passwort in der Debian-VM.")
+        # Occurs if username or password is incorrect.
+        print("❌ Login Error: Check user and password in the Debian VM.")
     except paramiko.SSHException as e:
-        # Tritt auf, wenn es Probleme mit dem SSH-Protokoll gibt.
-        print(f"❌ SSH-Protokollfehler: {e}")
+        # Occurs if there are issues with the SSH protocol.
+        print(f"❌ SSH Protocol Error: {e}")
     except Exception as e:
-        # Fängt alle anderen Fehler ab (z.B. falsche IP oder "Server ist aus").
-        print(f"❌ Netzwerkfehler: {e}")
+        # Catches all other errors (e.g., wrong IP or 'server is down').
+        print(f"❌ Network Error: {e}")
     finally:
-        # 5. Die Verbindung sauber trennen:
-        # Das ist extrem wichtig, damit auf dem Server keine 'toten' Sitzungen 
-        # offen bleiben, die irgendwann den Speicher füllen.
+        # 6. Cleanly disconnect:
+        # This is extremely important to prevent 'dead' sessions on the server.
         client.close()
-        print("--- Verbindung geschlossen und Ressourcen freigegeben ---")
+        print("--- Connection closed and resources released ---")
         return False
 
 if __name__ == "__main__":

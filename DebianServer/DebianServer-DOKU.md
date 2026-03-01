@@ -4,3 +4,7 @@
 
 ## 11.01.2026 - ip config
 - configured static IPv4 address
+
+
+## 27.02.2026
+# created folder for uploads (/home/securesync/uploads)
