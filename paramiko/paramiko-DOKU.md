@@ -11,3 +11,6 @@
 
 # 01.03.2026
 # add SFTP file transfer functionality
+
+#  security: switch to ssh key authentication
+# Description: Removed password-based login. The script now uses the existing 'github' SSH key for secure passwordless authentication
