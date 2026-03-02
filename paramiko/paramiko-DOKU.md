@@ -14,3 +14,7 @@
 
 #  security: switch to ssh key authentication
 # Description: Removed password-based login. The script now uses the existing 'github' SSH key for secure passwordless authentication
+
+# 02.03.2026 
+# implement encrypted credential storage
+# Moved sensitive host data to .env and updated script to use python-dotenv. Added .gitignore to protect secrets.
