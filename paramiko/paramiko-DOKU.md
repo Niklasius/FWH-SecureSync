@@ -18,3 +18,5 @@
 # 02.03.2026 
 # implement encrypted credential storage
 # Moved sensitive host data to .env and updated script to use python-dotenv. Added .gitignore to protect secrets.
+
+# feat: implement logging system (fixes #19) (~/projects/FWH-SecureSync/transfer.log)
