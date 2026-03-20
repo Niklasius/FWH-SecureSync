@@ -252,6 +252,11 @@ def upload_file(cfg: dict, local_path: str):
             allow_agent=False,
         )
         sftp = client.open_sftp()
+        try:
+            sftp.stat(cfg['remote_dir'])
+        except FileNotFoundError:
+            sftp.mkdir(cfg['remote_dir'])
+            logging.info(f"Remote-Verzeichnis erstellt: {cfg['remote_dir']}")
         sftp.put(local_path, remote_path)
         sftp.close()
         logging.info(f"Hochgeladen: {file_name} -> {cfg['user']}@{cfg['host']}:{remote_path}")
