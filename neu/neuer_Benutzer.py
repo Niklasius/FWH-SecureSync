@@ -1,5 +1,6 @@
 import paramiko
 
+# als Hilfsfunktion — gibt immer Exit-Code, Output und Fehler zurück
 def run_command(client, command):
     stdin, stdout, stderr = client.exec_command(command)
     exit_code = stdout.channel.recv_exit_status()
