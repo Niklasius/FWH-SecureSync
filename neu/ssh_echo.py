@@ -1,3 +1,7 @@
+'''
+---     Paramiko Einführung
+'''
+
 import paramiko
 
 # Verbindungsparameter
