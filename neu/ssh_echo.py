@@ -8,7 +8,7 @@ password = input("Passwort: ")
 
 # SSH-Client erstellen und verbinden
 client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy()) #(Sicherheitsrisiko durch automatisches hinzufügen)
 
 try:
     client.connect(hostname=host, port=port, username=username, password=password)
