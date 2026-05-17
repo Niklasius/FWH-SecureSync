@@ -2,7 +2,9 @@
 
 ## Was ist Paramiko?
 
-Paramiko ist eine Python-Bibliothek, die das **SSHv2-Protokoll** vollständig in reinem Python implementiert. Sie ermöglicht es, SSH-Verbindungen aufzubauen, Befehle auf Remote-Servern auszuführen, Dateien via SFTP zu übertragen und SSH-Tunnel zu erstellen – ohne externe Tools wie `ssh` oder `scp`.
+Paramiko ist eine Python-Bibliothek, die das **SSHv2-Protokoll** vollständig in Python implementiert. 
+Die Bibliothek ermöglicht es, SSH-Verbindungen aufzubauen, Befehle auf Remote-Servern auszuführen, 
+Dateien via SFTP zu übertragen und SSH-Tunnel zu erstellen – ohne externe Tools wie `ssh` oder `scp`.
 
 ```bash
 pip install paramiko
@@ -10,7 +12,7 @@ pip install paramiko
 
 ---
 
-## Verbindungsaufbau – Grundstruktur
+## Grundstruktur - Verbindungsaufbau
 
 Jede Paramiko-Verbindung folgt demselben Grundprinzip:
 
@@ -20,18 +22,21 @@ Jede Paramiko-Verbindung folgt demselben Grundprinzip:
 4. Aktionen ausführen
 5. Verbindung schließen (`close()`)
 
-Der `connect()`-Aufruf nimmt mindestens `hostname`, `port` und `username` entgegen – die **Authentifizierung** wird darüber hinaus konfiguriert.
+Der `connect()`-Aufruf nimmt mindestens `hostname`, 
+`port` und `username` entgegen – die **Authentifizierung** wird darüber hinaus konfiguriert.
 
 ---
 
 ## Host-Key-Verifizierung
 
-Bevor die eigentliche Authentifizierung stattfindet, prüft Paramiko den **Host-Key des Servers** (vergleichbar mit dem Fingerprint beim ersten `ssh`-Login).
+Bevor die eigentliche Authentifizierung stattfindet, 
+prüft Paramiko den **Host-Key des Servers** (vergleichbar mit dem Fingerprint beim ersten `ssh`-Login).
 
 ### Verfügbare Policies
 
 **`RejectPolicy`** *(empfohlen)*
-Unbekannte Host-Keys werden abgelehnt. Der Server muss vorher in `~/.ssh/known_hosts` eingetragen sein. Schützt vor Man-in-the-Middle-Angriffen.
+Unbekannte Host-Keys werden abgelehnt. Der Server muss vorher in `~/.ssh/known_hosts` eingetragen sein. 
+Schützt vor Man-in-the-Middle-Angriffen.
 
 ```python
 client.load_system_host_keys()
@@ -39,7 +44,8 @@ client.set_missing_host_key_policy(paramiko.RejectPolicy())
 ```
 
 **`AutoAddPolicy`**
-Unbekannte Host-Keys werden automatisch akzeptiert und gespeichert. Praktisch für Testumgebungen, aber unsicher in Produktion – der Server wird nie verifiziert.
+Unbekannte Host-Keys werden automatisch akzeptiert und gespeichert. 
+Praktisch für Testumgebungen, aber unsicher in Produktion – der Server wird nie verifiziert.
 
 ```python
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -62,10 +68,10 @@ Die einfachste Methode: Benutzername und Passwort werden direkt an `connect()` �
 
 ```python
 client.connect(
-    hostname="192.168.1.10",
+    hostname="{ip}",
     port=22,
-    username="niklas",
-    password="meinPasswort"
+    username="{user}",
+    password="{password}"
 )
 ```
 
@@ -85,7 +91,7 @@ import getpass
 password = getpass.getpass("Passwort: ")
 ```
 
-`getpass` liest die Eingabe ohne Echo im Terminal – das Passwort wird nicht angezeigt. Alle Skripte im Projekt verwenden genau diese Methode.
+`getpass` liest die Eingabe ohne Echo im Terminal – das Passwort wird nicht angezeigt.
 
 ---
 
@@ -114,19 +120,14 @@ key.write_private_key_file("/home/user/.ssh/id_ed25519")
 print(key.get_base64())
 ```
 
-Alternativ via Terminal:
-```bash
-ssh-keygen -t ed25519 -C "kommentar"
-```
-
 #### Verbinden mit Key-Datei
 
 ```python
 client.connect(
-    hostname="192.168.1.10",
+    hostname="{ip}",
     port=22,
-    username="niklas",
-    key_filename="/home/niklas/.ssh/id_ed25519"
+    username="{user}",
+    key_filename="{path}"
 )
 ```
 
@@ -135,12 +136,12 @@ Paramiko erkennt den Key-Typ automatisch anhand der Datei.
 #### Verbinden mit Key-Objekt (im Speicher)
 
 ```python
-private_key = paramiko.Ed25519Key.from_private_key_file("/home/niklas/.ssh/id_ed25519")
+private_key = paramiko.Ed25519Key.from_private_key_file("{path}")
 
 client.connect(
-    hostname="192.168.1.10",
+    hostname="{ip}",
     port=22,
-    username="niklas",
+    username="{user}",
     pkey=private_key
 )
 ```
@@ -151,14 +152,15 @@ Ein Private Key kann zusätzlich mit einer Passphrase gesichert sein:
 
 ```python
 private_key = paramiko.RSAKey.from_private_key_file(
-    "/home/niklas/.ssh/id_rsa",
-    password="key-passphrase"
+    "{path}",
+    password="{key-passphrase}"
 )
 ```
 
 #### Public Key auf den Server übertragen
 
-Nach dem Generieren muss der Public Key auf den Server. Das kann manuell oder automatisch per SFTP geschehen:
+Nach dem Generieren muss der Public Key auf den Server. 
+Das kann manuell oder automatisch per SFTP geschehen:
 
 ```python
 # Verbindung zunächst mit Passwort aufbauen
@@ -167,7 +169,7 @@ client.connect(hostname=host, username=username, password=password)
 # Public Key an authorized_keys anhängen
 pub_key_line = f"ssh-ed25519 {key.get_base64()}\n"
 with client.open_sftp() as sftp:
-    with sftp.open("/home/niklas/.ssh/authorized_keys", "a") as f:
+    with sftp.open("/home/{user}/.ssh/authorized_keys", "a") as f:
         f.write(pub_key_line)
 ```
 
@@ -208,10 +210,10 @@ with client.open_sftp() as sftp:
 
 ```python
 client.connect(
-    hostname="192.168.1.10",
+    hostname="1{ip}",
     port=22,
-    username="niklas",
-    key_filename="/home/niklas/.ssh/id_ed25519",
+    username="{user}",
+    key_filename="/home/{user}/.ssh/id_ed25519",
     timeout=10,
     look_for_keys=False,   # nur den angegebenen Key verwenden
     allow_agent=False       # SSH-Agent deaktivieren
@@ -226,19 +228,26 @@ Nach dem erfolgreichen `connect()` stehen verschiedene Aktionen zur Verfügung:
 
 ### Befehle ausführen – `exec_command()`
 
-Für einzelne, nicht-interaktive Befehle. Gibt drei Streams zurück (`stdin`, `stdout`, `stderr`). Der Exit-Code ist über `stdout.channel.recv_exit_status()` abrufbar. Im Projekt genutzt in `ssh_echo.py` und `neuer_Benutzer.py`.
+Für einzelne, nicht-interaktive Befehle. Gibt drei Streams zurück (`stdin`, `stdout`, `stderr`). 
+Der Exit-Code ist über `stdout.channel.recv_exit_status()` abrufbar. 
+Im Projekt genutzt in `ssh_echo.py` und `neuer_Benutzer.py`.
 
 ### Interaktive Shell – `invoke_shell()`
 
-Öffnet ein echtes PTY (Pseudo-Terminal). Notwendig für Befehle die eine Terminal-Umgebung erwarten, wie `sudo`, interaktive Programme oder mehrzeilige Eingaben. Kommunikation läuft über `shell.send()` und `shell.recv()`. Im Projekt genutzt in `PTY.py`.
+Öffnet ein echtes PTY (Pseudo-Terminal). Notwendig für Befehle die eine Terminal-Umgebung erwarten, 
+wie `sudo`, interaktive Programme oder mehrzeilige Eingaben. 
+Kommunikation läuft über `shell.send()` und `shell.recv()`. Im Projekt genutzt in `PTY.py`.
 
 ### Dateitransfer – `open_sftp()`
 
-Öffnet eine SFTP-Session für Dateioperationen: Upload (`put`), Download (`get`), Verzeichnisse auflisten, erstellen und löschen. Im Projekt genutzt in `upload.py`.
+Öffnet eine SFTP-Session für Dateioperationen: Upload (`put`), Download (`get`), 
+Verzeichnisse auflisten, erstellen und löschen. Im Projekt genutzt in `upload.py`.
 
 ### SSH-Tunnel – `get_transport()`
 
-Gibt den Transport-Layer der Verbindung zurück. Darüber können mit `open_channel("direct-tcpip", ...)` TCP-Verbindungen durch den SSH-Tunnel geleitet werden. Jede Verbindung wird in einem eigenen Thread weitergeleitet. Im Projekt genutzt in `tunnel.py`.
+Gibt den Transport-Layer der Verbindung zurück. 
+Darüber können mit `open_channel("direct-tcpip", ...)` TCP-Verbindungen durch den SSH-Tunnel geleitet werden. 
+Jede Verbindung wird in einem eigenen Thread weitergeleitet. Im Projekt genutzt in `tunnel.py`.
 
 ---
 
@@ -252,4 +261,5 @@ Die drei wichtigsten Exceptions:
 | `paramiko.SSHException` | SSH-Protokollfehler, Verbindungsabbruch |
 | `Exception` | Netzwerkfehler, Host nicht erreichbar, etc. |
 
-`client.close()` gehört immer in den `finally`-Block, damit die Verbindung auch bei Fehlern sauber getrennt wird.
+`client.close()` gehört immer in den `finally`-Block, 
+damit die Verbindung auch bei Fehlern sauber getrennt wird.
